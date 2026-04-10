@@ -1,0 +1,42 @@
+version: '3.9'
+services:
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password123}
+      POSTGRES_DB: appointments_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # backend:
+  #   build: ./api
+  #   ports:
+  #     - "80:3001"
+  #   environment:
+  #     DATABASE_HOST: postgres
+  #     DATABASE_PORT: 5432
+  #     DATABASE_USER: postgres
+  #     DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-password123}
+  #     DATABASE_NAME: appointments_db
+  #     NODE_ENV: development
+  #     GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+  #     GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+  #     GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
+  #   depends_on:
+  #     - postgres
+
+#  frontend:
+#    build: ./web
+#    ports:
+#      - "80:3000"
+#    environment:
+#      NEXT_PUBLIC_API_URL: http://${SERVER_IP:-localhost}:3000
+#    depends_on:
+#      - backend
+
+volumes:
+  postgres_data:

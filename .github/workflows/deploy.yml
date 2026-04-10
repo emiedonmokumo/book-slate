@@ -1,0 +1,56 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches: [ feature/google-calendar-integration ]
+    # paths:
+      # - '.github/workflows/deploy.yml'
+      # - 'docker-compose.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        port: 22
+        script: |
+          # Install Docker + Docker Compose if missing
+          if ! command -v docker &> /dev/null; then
+            echo "Installing Docker..."
+            sudo apt-get update
+            sudo apt-get install -y docker.io docker-compose
+            sudo systemctl start docker
+            sudo systemctl enable docker
+            sudo usermod -aG docker ubuntu
+          fi
+
+          # Clone or update repo
+          if [ ! -d "/home/ubuntu/bookslate" ]; then
+            git clone https://github.com/emiedonmokumo/next-nest.git /home/ubuntu/bookslate
+          else
+            cd /home/ubuntu/bookslate
+            git reset --hard HEAD
+            git pull origin feature/google-calendar-integration
+          fi
+
+          cd /home/ubuntu/bookslate
+          git checkout feature/google-calendar-integration
+
+          # Set environment variables
+          export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
+
+          echo "Stopping old containers..."
+          sudo docker-compose down || true
+
+          echo "Building and starting containers..."
+          sudo docker-compose up --build -d
+
+          echo "Deployment completed!"
